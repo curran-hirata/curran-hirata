@@ -1,4 +1,4 @@
-## Hi there 👋
+## Hi there, I'm Curran and am an accounting student at UH Manoa. I was born and raised in Hawaii and currently a senior in college. I enjoy watching baseball, listening to music and collecting whether that be coins, CDs or trading cards. 
 
 <!--
 **curran-hirata/curran-hirata** is a ✨ _special_ ✨ repository because its `README.md` (this file) appears on your GitHub profile.
