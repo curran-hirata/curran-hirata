@@ -47,9 +47,9 @@ This specification defines a workbook that compares four strategies for the rece
 
 ## 2. Inputs: The Named-Range Contract
 
-All inputs live on the Inputs tab as the named ranges below. Every value is **indicative, replaced with live market data at Stage 4.** Every rate is an annual rate on an **ACT/360** basis.
+All inputs live on the Inputs tab as the named ranges below. **Every placeholder value in this table is indicative, replaced with live data at Stage 4.** Placeholders are dated 2026-11-05. Every rate is an annual rate on an **ACT/360** basis.
 
-| Named range | Description | Placeholder value | Unit | Stage 4 source |
+| Named range | Description | Placeholder value (indicative, replaced with live data at Stage 4; as of 2026-11-05) | Unit | Stage 4 source |
 |---|---|---:|---|---|
 | `FC_AMT` | EUR receivable | 3,000,000 | EUR | Scenario 16 invoice (fixed, not a market input) |
 | `S0_in` | Spot at inception | 1.1670 *(placeholder I chose, see note 1)* | USD per EUR | EUR/USD spot, ECB reference rate or Bloomberg/Reuters, dated and timestamped |
@@ -62,9 +62,9 @@ All inputs live on the Inputs tab as the named ranges below. Every value is **in
 | `PREM_CALL` | Call premium per EUR | 0.0376 | USD | Scenario-provided; bank option quote at Stage 4 |
 | `T_DAYS` | Days to settlement | 273 | Days | Invoice payment terms |
 
-**Note 1 — spot placeholder.** The scenario gives the spot only as "market quote." I chose 1.1670 so that covered interest parity holds at the placeholder rates (see §7, check 3). With these inputs `F_implied` ≈ 1.1757, close to the 1.1756 forward. Stage 4 replaces it with the live spot, and the strikes follow it.
+**Note 1 — spot placeholder.** The scenario gives the spot only as "market quote." This value is indicative, replaced with live data at Stage 4. I chose 1.1670 so that covered interest parity holds at the placeholder rates (see §7, check 3). With these inputs `F_implied` ≈ 1.1757, close to the 1.1756 forward. Stage 4 replaces it with the live spot, and the strikes follow it.
 
-**Note 2 — rates.** The scenario leaves the rates to me. 3.50% (USD) and 2.50% (EUR) are placeholders. Stage 4 will pull both for the same 273-day tenor from the sources above and record the date and time of each.
+**Note 2 — rates.** The scenario leaves the rates to me. 3.50% (USD) and 2.50% (EUR) are placeholders, indicative, replaced with live data at Stage 4. Stage 4 will pull both for the same 273-day tenor from the sources above and record the date and time of each.
 
 The workbook also exposes `BASIS = 360` as a single day-count constant on the Inputs tab; every `T_DAYS / 360` below reads `T_DAYS / BASIS`.
 
@@ -139,7 +139,7 @@ Formulas are in named-range notation. The workbook uses the names, not cell addr
 
 ## 7. Validation Rules (Check Figures)
 
-Figures use the placeholders in §2 and are approximate. The Stage 3 build should reproduce them to rounding.
+Check figures are computed from the placeholders in §2, which are indicative, replaced with live data at Stage 4. They will be recomputed with live data at Stage 4 and are approximate. The Stage 3 build should reproduce them to rounding.
 
 1. **Forward:** `FWD = 3,000,000 × 1.1756 = USD 3,526,800.`
 2. **Money-market pipeline:** `FC_BORROW ≈ EUR 2,944,182`, `USD_NOW ≈ USD 3,435,860`, `MM ≈ USD 3,527,050`. In addition, `FC_BORROW × (1 + R_FC × T_DAYS / 360)` must equal EUR 3,000,000 exactly.
