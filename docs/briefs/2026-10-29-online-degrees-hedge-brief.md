@@ -59,7 +59,3 @@ I would reject my hypothesis if my completed model shows the money-market hedge 
 
 Stage 2 designs the spreadsheet model on paper, including its inputs, formulas, and checks. Stage 3 has an AI tool build the model from that design, followed by an audit of the work. Stage 4 replaces the placeholders with sourced, timestamped market prices. Stage 5 validates the results independently and delivers the final recommendation in a decision memo.
 
----
-
-## References
-
