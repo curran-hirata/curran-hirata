@@ -9,7 +9,7 @@
 | File | What it is | Stage | Status |
 |---|---|---|---|
 | `README.md` | This overview | 0 | Done |
-| `spec.md` | Model specification: inputs, tabs, formulas, and checks | 2 | Not started |
+| `spec.md` | Model specification: inputs, tabs, formulas, and checks | 2 | Completed Draft |
 | `model.xlsx` | The workbook, built from the spec and then filled with sourced market data | 3–4 | Not started |
 
 ## Related documents
