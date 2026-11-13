@@ -7,9 +7,9 @@ scenario: 16 online-degrees
 date: 2026-11-05
 updated: 2026-11-13
 status: draft
-version: 0.3
+version: 0.4
 based_on: "docs/briefs/2026-10-29-online-degrees-hedge-brief.md"
-llm_used: "Claude — gap review of my draft against the Stage 2 template, restructuring, market-data lookup and check-figure arithmetic"
+llm_used: "Claude — gap review of my draft against the Stage 2 template, restructuring, market-data lookup, check-figure arithmetic and the Stage 3 build audit"
 ---
 
 <div style="border-top: 6px solid #024731; border-bottom: 1px solid #B2B2B2; padding: 12px 0; margin-bottom: 24px; font-family: 'Open Sans', Helvetica, Arial, sans-serif;">
@@ -28,8 +28,8 @@ llm_used: "Claude — gap review of my draft against the Stage 2 template, restr
 | **Updated by** | Curran Hirata & Claude |
 | **Date Created** | 2026-11-05 |
 | **Date Updated** | 2026-11-13 |
-| **Version** | 0.3 |
-| **LLM Used** (optional) | Claude: gap review of my draft against the template; restructuring; market-data lookup; check-figure arithmetic |
+| **Version** | 0.4 |
+| **LLM Used** (optional) | Claude: gap review of my draft against the template; restructuring; market-data lookup; check-figure arithmetic; Stage 3 build audit |
 | **Role** | Treasury Analyst |
 | **Audience** | CFO / Director of Treasury |
 | **Companion Workbook** | `capabilities/fx-hedging/model.xlsx` (Stage 3) |
@@ -66,6 +66,8 @@ All inputs live on the Inputs tab as the named ranges below. **Every value in th
 
 Every `T_DAYS / BASIS` below equals `273 / 360 = 0.758333`.
 
+**Grid and check settings** (blue assumption cells on the Inputs tab, named so no formula hard-codes them): `STEP_FRAC = 1%` (sensitivity step), `GRID_HALF_STEPS = 5` (steps each side of the base case, so the grid is ±5%), and `PARITY_TOL = 1%` (the Stage 1 falsifier threshold).
+
 ### 2.1 Market data sources and how the values were derived
 
 Observation date for all market inputs: **2026-11-10**, the latest date on which the ECB rate, Euribor and Treasury yields were all published (the US Treasury published no yield for 2026-11-11, Veterans Day). Retrieved 2026-11-13.
@@ -84,7 +86,9 @@ Observation date for all market inputs: **2026-11-10**, the latest date on which
 
 **Note 1 — timing of the quotes.** The ECB rate is fixed at 14:15 CET, Treasury yields are end-of-day, and Euribor is a morning fixing, so the three are not simultaneous. That is acceptable for a spec. Stage 4 takes the spot, rates and bank quotes from the same date and time, and records both.
 
-**Note 2 — the forward is not consistent with this spot.** The scenario's forward, 1.1756, is 0.0542 (4.83%) above the 1.1214 spot. The rates above imply a 273-day forward of only about 1.1321 (+0.95%). The scenario's forward was not quoted on the same date as these market inputs, and the spec keeps `F0_in` as given. The consequence is worked through in §7, check 3.
+**Note 2 — the forward is not consistent with this spot.** The scenario's forward, 1.1756, is 0.0542 (4.83%) above the 1.1214 spot. The rates above imply a 273-day forward of only about 1.1321 (+0.95%). The day count is not the cause: switching `BASIS` to 365 moves the gap by about 0.01 percentage points. To justify the forward at this spot, the USD rate would have to be about 9.6% with the EUR rate at 3.12% (a spread of about 6.5 points, against 1.3 points in the market). The scenario's forward was not quoted on the same date as these market inputs, and the spec keeps `F0_in` as given. The consequence is worked through in §7, check 3.
+
+**Note 3 — the scenario quotes look jointly stale.** The forward and the rates imply a spot of about 1.1645, and the forward and put-call parity on the two premiums (strikes at the money) imply an at-the-money spot of about 1.1599 (§7, check 9). Both sit about 3.5% above the 1.1214 ECB spot. The forward and both premiums are undated scenario quotes, so they may all have been struck at an earlier, higher spot. With the strikes set to 1.1214, the premiums may not match an at-the-money option today. Stage 4 re-quotes the forward and both premiums on the same date and time as the spot.
 
 ---
 
@@ -93,13 +97,14 @@ Observation date for all market inputs: **2026-11-10**, the latest date on which
 | # | Tab | Purpose |
 |---|---|---|
 | 1 | **Cover** | Title, scenario 16 summary, author and date, purpose, headline exposure (EUR 3,000,000, 273 days). |
-| 2 | **Legend-Key** | Color legend (yellow = input, blue = assumption, black = formula, green = cross-tab link, gray = output), units, and name list. |
-| 3 | **Inputs** | The ten named ranges plus `BASIS`, each with unit, value, as-of date, source and the "indicative, replaced with live data at Stage 4" flag. |
+| 2 | **Legend-Key** | Color legend (yellow = input, blue = assumption, green = formula, including cross-tab links, gray = output), units, and name list. |
+| 3 | **Inputs** | The ten named ranges plus `BASIS`, each with unit, value, as-of date, source and the "indicative, replaced with live data at Stage 4" flag; the grid and check settings; and the market quotes with the interpolation to 273 days (§2.1) as formulas. |
 | 4 | **Forward** | Forward hedge proceeds. |
 | 5 | **Money-Market** | Borrow, convert, invest (three separate cells) and the parity check. |
 | 6 | **Options** | Put-hedge proceeds and the reference call payoff, at one `S_T` and across the grid, including the future-valued premium. |
 | 7 | **Sensitivity** | `S_T` grid, proceeds for the four strategies, hedge profit columns, winner labels, and the comparison chart. |
-| 8 | **Notes-Assumptions** | Assumptions, the §2.1 source table with access dates and the interpolation, limitations. |
+| 8 | **Notes-Assumptions** | Assumptions, the §2.1 source table with access dates, limitations. |
+| 9 | **Checks** | Every §7 check figure computed live beside the model value, with a PASS or FAIL status, and the cross-checks in §7, check 9. A FAIL is reported, never forced to pass. |
 
 ---
 
@@ -151,7 +156,7 @@ Formulas are in named-range notation. The workbook uses the names, not cell addr
 
 ## 6. Sensitivity Plan
 
-- **Grid:** `S_T` runs from `0.95 × S0_in` to `1.05 × S0_in` in **1% steps**, 11 rows including the base case (`S_T = S0_in`). At the current spot, that is 1.0653 to 1.1775.
+- **Grid:** `S_T` runs from `0.95 × S0_in` to `1.05 × S0_in` in **1% steps**, 11 rows including the base case (`S_T = S0_in`). The first row is `S0_in × (1 − GRID_HALF_STEPS × STEP_FRAC)` and each later row adds `STEP_FRAC`; no row is typed. At the current spot, that is 1.0653 to 1.1775.
 - **Strategies compared (four):** no hedge, forward, money-market, put.
 - **Columns:** `S_T`, `UNHEDGED`, `FWD`, `MM`, `PUT`, hedge profit for each of forward, money-market and put (strategy minus unhedged), the reference `CALL` payoff, and two labels: overall best (including no hedge) and best active hedge.
 - **Chart:** One line chart, `S_T` on the x-axis and USD proceeds on the y-axis, with four series. The forward and money-market lines are flat, with the money-market line below the forward at the current inputs. The unhedged line is straight and rising, and the put line is flat at its floor and then rises with a kink at the strike.
@@ -161,7 +166,7 @@ Formulas are in named-range notation. The workbook uses the names, not cell addr
 
 ## 7. Validation Rules (Check Figures)
 
-Check figures are computed from the values in §2, which are indicative, replaced with live data at Stage 4. They will be recomputed with live data at Stage 4 and are approximate. The Stage 3 build should reproduce them to rounding.
+Check figures are computed from the values in §2, which are indicative, replaced with live data at Stage 4. They will be recomputed with live data at Stage 4 and are approximate. The Stage 3 build should reproduce them to rounding. These are base-case regression values for the inputs in §2: if any input changes, the expected figures on the Checks tab must be recomputed. Checks 2d, 3b and 4b (loan repayment, `FC_AMT × F_IMPLIED = MM`, put floor) hold for any inputs.
 
 1. **Forward:** `FWD = 3,000,000 × 1.1756 = USD 3,526,800.`
 2. **Money-market pipeline:** `FC_BORROW ≈ EUR 2,930,661`, `USD_NOW ≈ USD 3,286,443`, `MM ≈ USD 3,396,350`. In addition, `FC_BORROW × (1 + R_FC × T_DAYS / BASIS)` must equal EUR 3,000,000 exactly.
@@ -171,8 +176,9 @@ Check figures are computed from the values in §2, which are indicative, replace
 6. **Unhedged:** At `S_T = S0_in`, `UNHEDGED = USD 3,364,200`.
 7. **Grid winners:** The forward is the best strategy in rows −5% to +4%. In the +5% row (`S_T = 1.1775`) unhedged proceeds of USD 3,532,410 beat the forward's USD 3,526,800 by USD 5,610. The best active hedge is the forward in all 11 rows.
 8. **Integrity:** All eleven names exist (ten plus `BASIS`). No formula errors. Every output cell is a formula, with no hard-coded results. Colors match the Legend-Key tab. All proceeds are in USD.
+9. **Cross-checks (informational, no pass or fail except 9a and 9b):** (a) `R_USD` and `R_FC` equal the interpolated derivations in §2.1 rounded to 4 decimals. (b) The forward implied by the premiums, `K_PUT + (PREM_CALL − PREM_PUT) × (1 + R_USD × T_DAYS / BASIS)`, is about 1.1371, within 0.005 of the rate-implied forward (1.1321) and 0.038 below `F0_in`. (c) The spot implied by `F0_in` and the rates, `F0_in × DF_FC / DF_USD`, is about 1.1645. (d) The at-the-money spot implied by `F0_in` and the premiums, `F0_in − (PREM_CALL − PREM_PUT) × DF_USD`, is about 1.1599. Checks (c) and (d) show the scenario quotes pointing to a spot near 1.16, not the observed 1.1214 (§2.1, note 3).
 
-**If the money-market/forward gap exceeds 1%:** treat it as an input problem first, not a market finding. Check that the two rates and the forward are for the same date and tenor, that the day-count basis matches, and that the spot and forward were quoted at the same time. Here the rates share one tenor and date, both are ACT/360, and the spot is from the same day, so the unmatched input is the scenario's forward, which has no market date. The first action at Stage 4 is to replace `F0_in` with a bank quote for 273 days taken at the same time as the spot. If that quote comes back near 1.132, parity holds and the forward and money-market hedge are interchangeable, which is the Stage 1 expectation. If the gap persists with clean, matched inputs, the two certain hedges are no longer equivalent. The recommendation would then switch from "the forward and money-market are interchangeable" to "use whichever locks in more dollars, after accounting for the borrowing capacity and cash deposit the money-market route uses." On the scenario's forward taken at face value, that is the forward, by about USD 130,450, but a gap that size would be treated as a stale quote until confirmed by the bank. The put's cost comparison would then be made against the better of the two.
+**If the money-market/forward gap exceeds 1%:** treat it as an input problem first, not a market finding. Check that the two rates and the forward are for the same date and tenor, that the day-count basis matches, and that the spot and forward were quoted at the same time. Here the rates share one tenor and date, both are ACT/360, and the spot is from the same day, so the unmatched input is the scenario's forward, which has no market date. The first action at Stage 4 is to replace `F0_in` with a bank quote for 273 days taken at the same time as the spot. In the workbook, setting `F0_in` to the rate-implied 1.1321 makes the parity flag PASS, which confirms the forward is the only unmatched input. If that quote comes back near 1.132, parity holds and the forward and money-market hedge are interchangeable, which is the Stage 1 expectation. If the gap persists with clean, matched inputs, the two certain hedges are no longer equivalent. The recommendation would then switch from "the forward and money-market are interchangeable" to "use whichever locks in more dollars, after accounting for the borrowing capacity and cash deposit the money-market route uses." On the scenario's forward taken at face value, that is the forward, by about USD 130,450, but a gap that size would be treated as a stale quote until confirmed by the bank. The put's cost comparison would then be made against the better of the two.
 
 ---
 
@@ -206,7 +212,8 @@ The Sensitivity table and chart from §6 are also outputs.
 |---|---|---|---|
 | 0.2 | 2026-11-05 | Curran Hirata & Claude | Rewritten on the Stage 2 template with scenario 16 inputs; placeholders flagged. |
 | 0.3 | 2026-11-13 | Curran Hirata & Claude | Replaced the chosen spot and rates with sourced, dated market values (§2.1); strikes follow the spot; added `BASIS` row; put and call premiums future-valued at `R_USD` (§4); all check figures recomputed; parity check now reports FAIL against the scenario forward. |
+| 0.4 | 2026-11-13 | Curran Hirata & Claude | Stage 3 audit fixes: Legend-Key colors aligned with the build contract (green = formula); added the Checks tab (§3); named the grid and check settings (§2, §6); added the base-case regression note and the cross-checks to §7; added notes 2 and 3 on the scenario forward and premiums. |
 
 ---
 
-**End of Stage 2 specification (v0.3)**
+**End of Stage 2 specification (v0.4)**
