@@ -3,7 +3,7 @@
 **Date:** 2026-11-13
 **Workbook:** `capabilities/fx-hedging/model.xlsx`, built from `capabilities/fx-hedging/spec.md` v0.4
 **Built with:** Claude (AI build from the spec)
-**Audited by:** recalculating the file in LibreOffice and running scripts over every cell, plus the Excel steps in "Reproduce in Excel" below, which still need to be run by the author
+**Audited by:** recalculating the file in LibreOffice and running scripts over every cell, plus the Excel steps in "Reproduce in Excel" below, which has been run by the author
 
 ## Summary
 
