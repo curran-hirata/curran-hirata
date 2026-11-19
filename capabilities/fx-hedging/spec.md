@@ -5,9 +5,9 @@ engagement: fx-hedging
 capability: fx-hedging
 scenario: 16 online-degrees
 date: 2026-11-05
-updated: 2026-11-13
+updated: 2026-11-18
 status: draft
-version: 0.4
+version: 0.5
 based_on: "docs/briefs/2026-10-29-online-degrees-hedge-brief.md"
 llm_used: "Claude — gap review of my draft against the Stage 2 template, restructuring, market-data lookup, check-figure arithmetic and the Stage 3 build audit"
 ---
@@ -27,8 +27,8 @@ llm_used: "Claude — gap review of my draft against the Stage 2 template, restr
 | **Created by** | Curran Hirata |
 | **Updated by** | Curran Hirata & Claude |
 | **Date Created** | 2026-11-05 |
-| **Date Updated** | 2026-11-13 |
-| **Version** | 0.4 |
+| **Date Updated** | 2026-11-18 |
+| **Version** | 0.5 |
 | **LLM Used** (optional) | Claude: gap review of my draft against the template; restructuring; market-data lookup; check-figure arithmetic; Stage 3 build audit |
 | **Role** | Treasury Analyst |
 | **Audience** | CFO / Director of Treasury |
@@ -70,6 +70,8 @@ Every `T_DAYS / BASIS` below equals `273 / 360 = 0.758333`.
 
 ### 2.1 Market data sources and how the values were derived
 
+**Stage 4 update (2026-11-18).** The values below are the design-time record observed on 2026-11-10. At Stage 4 the workbook was populated with the 2026-11-16 values (spot 1.1014, `R_USD` 4.46%, `R_FC` 3.18%), with sources and timestamps in `data/2026-11-18-online-degrees-market-data-memo.md`. The forward and both premiums are unchanged scenario quotes. The workbook holds the as-of date and retrieval time in two input cells, `OBS_DATE` and `RETRIEVED_AT` (Inputs C37:C38), and every dated label reads from them.
+
 Observation date for all market inputs: **2026-11-10**, the latest date on which the ECB rate, Euribor and Treasury yields were all published (the US Treasury published no yield for 2026-11-11, Veterans Day). Retrieved 2026-11-13.
 
 | Ref | Input | Quote on 2026-11-10 | Source |
@@ -104,7 +106,7 @@ Observation date for all market inputs: **2026-11-10**, the latest date on which
 | 6 | **Options** | Put-hedge proceeds and the reference call payoff, at one `S_T` and across the grid, including the future-valued premium. |
 | 7 | **Sensitivity** | `S_T` grid, proceeds for the four strategies, hedge profit columns, winner labels, and the comparison chart. |
 | 8 | **Notes-Assumptions** | Assumptions, the §2.1 source table with access dates, limitations. |
-| 9 | **Checks** | Every §7 check figure computed live beside the model value, with a PASS or FAIL status, and the cross-checks in §7, check 9. A FAIL is reported, never forced to pass. |
+| 9 | **Checks** | Every §7 check computed live beside the model value, with a PASS or FAIL status, and the cross-checks in §7, check 9. The expected column is a closed-form recomputation from the inputs (helper cells beside the table, written separately from the calculation tabs), so it follows the inputs. A FAIL is reported, never forced to pass. |
 
 ---
 
@@ -166,13 +168,13 @@ Formulas are in named-range notation. The workbook uses the names, not cell addr
 
 ## 7. Validation Rules (Check Figures)
 
-Check figures are computed from the values in §2, which are indicative, replaced with live data at Stage 4. They will be recomputed with live data at Stage 4 and are approximate. The Stage 3 build should reproduce them to rounding. These are base-case regression values for the inputs in §2: if any input changes, the expected figures on the Checks tab must be recomputed. Checks 2d, 3b and 4b (loan repayment, `FC_AMT × F_IMPLIED = MM`, put floor) hold for any inputs.
+Check figures are computed from the values in §2, which are indicative, replaced with live data at Stage 4. They will be recomputed with live data at Stage 4 and are approximate. The Stage 3 build should reproduce them to rounding. The figures below are for the 2026-11-10 inputs in §2. The workbook's Checks tab does not store them: it recomputes each expected value from the current inputs in closed form, so the checks stay valid whenever the inputs change (Stage 4 finding). Loading the 2026-11-10 inputs reproduces the figures below.
 
 1. **Forward:** `FWD = 3,000,000 × 1.1756 = USD 3,526,800.`
 2. **Money-market pipeline:** `FC_BORROW ≈ EUR 2,930,661`, `USD_NOW ≈ USD 3,286,443`, `MM ≈ USD 3,396,350`. In addition, `FC_BORROW × (1 + R_FC × T_DAYS / BASIS)` must equal EUR 3,000,000 exactly.
 3. **Parity:** `F_IMPLIED ≈ 1.1321`. Identity check, which always passes: `FC_AMT × F_IMPLIED` equals `MM` to the cent (about USD 3,396,350). Threshold check (the Stage 1 falsifier): `|MM − FWD|` must be within 1% of `FWD`, about USD 35,268. **At these inputs it is not:** `PARITY_DIFF ≈ −USD 130,450` (`PARITY_PCT ≈ −3.70%`), so `PARITY_FLAG` must show FAIL. The workbook must display that result, not hide it. The cause is the forward (§2.1, note 2).
-4. **Put kink:** At `S_T = K_PUT`, `PUT = 3,000,000 × 1.1214 − 69,447 = USD 3,294,753`. For every `S_T < K_PUT` the put result equals this floor. The put equals the forward when `S_T ≈ 1.1987`, above the grid.
-5. **Call:** `CALL = −USD 116,572` (future-valued premium only) for every `S_T ≤ K_CALL`, and rises one-for-one with `S_T` (times `FC_AMT`) above `K_CALL`.
+4. **Put kink:** At `S_T = K_PUT`, `PUT = 3,000,000 × 1.1214 − 69,447 = USD 3,294,753`. For every `S_T < K_PUT` the put result equals this floor. The put equals the forward when `S_T ≈ 1.1987`, above the grid. Coverage checks: **4d** `OUT_PUT` equals `FC_AMT × MAX(S0_in, K_PUT) − PUT_PREM_FV`; **4e** the Options-tab put column sums to the Sensitivity put column.
+5. **Call:** `CALL = −USD 116,572` (future-valued premium only) for every `S_T ≤ K_CALL`, and rises one-for-one with `S_T` (times `FC_AMT`) above `K_CALL`. Coverage checks: **5c** `OUT_CALL` equals its closed form; **5d** the Options-tab call column sums to the Sensitivity call column.
 6. **Unhedged:** At `S_T = S0_in`, `UNHEDGED = USD 3,364,200`.
 7. **Grid winners:** The forward is the best strategy in rows −5% to +4%. In the +5% row (`S_T = 1.1775`) unhedged proceeds of USD 3,532,410 beat the forward's USD 3,526,800 by USD 5,610. The best active hedge is the forward in all 11 rows.
 8. **Integrity:** All eleven names exist (ten plus `BASIS`). No formula errors. Every output cell is a formula, with no hard-coded results. Colors match the Legend-Key tab. All proceeds are in USD.
@@ -213,7 +215,8 @@ The Sensitivity table and chart from §6 are also outputs.
 | 0.2 | 2026-11-05 | Curran Hirata & Claude | Rewritten on the Stage 2 template with scenario 16 inputs; placeholders flagged. |
 | 0.3 | 2026-11-13 | Curran Hirata & Claude | Replaced the chosen spot and rates with sourced, dated market values (§2.1); strikes follow the spot; added `BASIS` row; put and call premiums future-valued at `R_USD` (§4); all check figures recomputed; parity check now reports FAIL against the scenario forward. |
 | 0.4 | 2026-11-13 | Curran Hirata & Claude | Stage 3 audit fixes: Legend-Key colors aligned with the build contract (green = formula); added the Checks tab (§3); named the grid and check settings (§2, §6); added the base-case regression note and the cross-checks to §7; added notes 2 and 3 on the scenario forward and premiums. |
+| 0.5 | 2026-11-18 | Curran Hirata & Claude | Stage 4: market-data update note in §2.1 (`OBS_DATE`, `RETRIEVED_AT`); Checks tab expected column is closed-form and not typed; coverage checks 4d, 4e, 5c, 5d added to §7. |
 
 ---
 
-**End of Stage 2 specification (v0.4)**
+**End of Stage 2 specification (v0.5)**
