@@ -13,7 +13,7 @@
 - **The parity check fails, and I did not change any input to make it pass.** The scenario forward of 1.1756 is 0.0638 USD per EUR above the covered-interest-parity (CIP) forward of 1.1118. On the EUR 3,000,000 receivable that is **USD 191,282**. The money-market hedge returns USD 3,335,518, which is 5.42% below the forward proceeds of USD 3,526,800 and well outside the 1% tolerance (USD 35,268).
 - The gap is larger than the 3.70% I reported at Stage 2 because the euro fell from 1.1214 (2026-11-10) to 1.1014 (2026-11-16) while the scenario forward stayed at 1.1756.
 - Populating the workbook exposed three structural defects, now fixed in separate commits (§6). Nothing else needed to change.
-- The FX Hedging Lab cross-check has not been performed yet. The inputs and the figures to compare are in §7.
+- The FX Hedging Lab agrees with the workbook on the forward, the three money-market steps, the implied forward and the parity gap, to the dollar (§7). The put and the sensitivity grid have not been compared yet.
 
 ## 2. Inputs, sources and timestamps
 
@@ -117,7 +117,7 @@ Populating through the input cells alone gave **0 formula errors** and **10 FAIL
 
 ## 7. FX Hedging Lab cross-check
 
-**Status: not yet performed.** I could not access the Lab, so this step remains for me to complete. Enter these inputs in the Lab and compare its outputs with the workbook values below. Any disagreement must be resolved before submitting, with the resolution recorded here.
+**Status: performed for the forward, money-market and parity outputs; the put and the sensitivity grid are not yet compared.** On 2026-11-18 I entered the inputs below in the [FX Hedging Lab](https://adamwstauffer.github.io/ai-lms/fxlab.html) and compared its hedge results with the workbook and with an independent Python recomputation.
 
 | Lab input | Value |
 |---|---|
@@ -129,20 +129,20 @@ Populating through the input cells alone gave **0 formula errors** and **10 FAIL
 | Days | 273 |
 | Put and call strike | 1.1014 |
 | Put premium / call premium | 0.0224 / 0.0376 |
-| Day count | 360 |
 
-| Output | Workbook | Lab result | Resolved? |
+| Output | Workbook | Lab | Agree? |
 |---|---|---|---|
-| Forward proceeds | USD 3,526,800.00 | *(enter)* | |
-| Money-market: EUR borrowed | EUR 2,929,358.52 | *(enter)* | |
-| Money-market: USD received at spot | USD 3,226,395.47 | *(enter)* | |
-| Money-market proceeds | USD 3,335,517.55 | *(enter)* | |
-| Put proceeds at `S_T` = strike | USD 3,234,727.18 | *(enter)* | |
+| Forward proceeds | USD 3,526,800.00 | $3,526,800 | Yes |
+| Money-market step 1: EUR borrowed | EUR 2,929,358.52 | 2,929,359 EUR | Yes (the lab rounds to the euro) |
+| Money-market step 2: USD received at spot | USD 3,226,395.47 | $3,226,395 | Yes |
+| Money-market step 3: USD proceeds | USD 3,335,517.55 | $3,335,518 | Yes |
+| Implied forward | 1.1118 | 1.1118 | Yes |
+| Parity gap | −USD 191,282 | −$191,282 | Yes |
+| Put proceeds and the ±5% grid | USD 3,234,727 floor | *not yet compared* | Pending |
 
-**Where a disagreement could come from.**
+**Resolution of the parity flag.** The lab prints "Parity gap of $-191,282 — in a real model this means a formula error (wrong rate basis, inverted ratio, or mis-sized loan), not an arbitrage." That is the lab's general message. Here the lab, the workbook and the independent recomputation agree on every figure to the dollar, so the gap is not a formula error in either tool. The three usual suspects are ruled out: the rate basis is ACT/360 in both, the ratio is not inverted (the implied forward is the same in both), and the loan is sized as `FC_AMT / (1 + R_FC × T/360)` in both. Setting `F0_in` to the implied forward makes the workbook's parity check pass, so the gap comes from the quoted forward, not from the model. I read it as a stale quote, not an arbitrage, and I am reporting it and asking for a requote instead of changing any input.
 
-- **Option premium timing:** My workbook carries the premium to settlement at `R_USD` (spec §4), so the put floor is USD 3,234,727. A lab that deducts the premium at face value gives USD 3,237,000, a difference of USD 2,273. That is a documented convention, not an error.
-- **Other usual suspects:** the day-count basis, the loan sizing and an input typo.
+**Still to compare: the put and the grid.** The lab builds the grid from the strike and premium. Its put column may deduct the premium at face value (floor USD 3,237,000) while the workbook carries it to settlement at `R_USD` (floor USD 3,234,727, spec §4). A difference of about USD 2,273 would be that documented convention, not an error. Once compared, the result goes in the last row of the table above.
 
 ## 8. Assumptions and limitations
 
