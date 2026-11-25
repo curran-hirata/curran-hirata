@@ -13,7 +13,7 @@
 - **The parity check fails, and I did not change any input to make it pass.** The scenario forward of 1.1756 is 0.0638 USD per EUR above the covered-interest-parity (CIP) forward of 1.1118. On the EUR 3,000,000 receivable that is **USD 191,282**. The money-market hedge returns USD 3,335,518, which is 5.42% below the forward proceeds of USD 3,526,800 and well outside the 1% tolerance (USD 35,268).
 - The gap is larger than the 3.70% I reported at Stage 2 because the euro fell from 1.1214 (2026-11-10) to 1.1014 (2026-11-16) while the scenario forward stayed at 1.1756.
 - Populating the workbook exposed three structural defects, now fixed in separate commits (§6). Nothing else needed to change.
-- The FX Hedging Lab agrees with the workbook on the forward, the three money-market steps, the implied forward and the parity gap, to the dollar (§7). The put and the sensitivity grid have not been compared yet.
+- The FX Hedging Lab agrees with the workbook on the forward, the three money-market steps, the implied forward and the parity gap, to the dollar (§7). The put and the sensitivity grid were compared too: the unhedged, forward and money-market columns agree in all 11 rows, and the put differs by a constant USD 2,272.82 because the Lab deducts the premium at face value while the workbook carries it to day 273 (§7).
 
 ## 2. Inputs, sources and timestamps
 
@@ -117,7 +117,7 @@ Populating through the input cells alone gave **0 formula errors** and **10 FAIL
 
 ## 7. FX Hedging Lab cross-check
 
-**Status: performed for the forward, money-market and parity outputs; the put and the sensitivity grid are not yet compared.** On 2026-11-18 I entered the inputs below in the [FX Hedging Lab](https://adamwstauffer.github.io/ai-lms/fxlab.html) and compared its hedge results with the workbook and with an independent Python recomputation.
+**Status: performed for the forward, money-market, parity, put and sensitivity-grid outputs.** On 2026-11-18 I entered the inputs below in the [FX Hedging Lab](https://adamwstauffer.github.io/ai-lms/fxlab.html) and compared its hedge results with the workbook and with an independent Python recomputation.
 
 | Lab input | Value |
 |---|---|
@@ -138,11 +138,20 @@ Populating through the input cells alone gave **0 formula errors** and **10 FAIL
 | Money-market step 3: USD proceeds | USD 3,335,517.55 | $3,335,518 | Yes |
 | Implied forward | 1.1118 | 1.1118 | Yes |
 | Parity gap | −USD 191,282 | −$191,282 | Yes |
-| Put proceeds and the ±5% grid | USD 3,234,727 floor | *not yet compared* | Pending |
+| Put floor (S_T at or below the strike, −5% to 0%) | USD 3,234,727.18 | $3,237,000 | No: Lab is USD 2,272.82 higher (premium convention, below) |
+| Put, +1% (S_T 1.1124) | USD 3,267,769.18 | $3,270,042 | No: same USD 2,272.82 |
+| Put, +3% (S_T 1.1344) | USD 3,333,853.18 | $3,336,126 | No: same USD 2,272.82 |
+| Put, +5% (S_T 1.1565) | USD 3,399,937.18 | $3,402,210 | No: same USD 2,272.82 |
+| Unhedged, forward and money-market columns, all 11 rows | e.g. −5%: 3,138,990 / 3,526,800 / 3,335,518 | identical in every row | Yes |
+| Best strategy, all 11 rows | Forward | Forward | Yes |
 
 **Resolution of the parity flag.** The lab prints "Parity gap of $-191,282 — in a real model this means a formula error (wrong rate basis, inverted ratio, or mis-sized loan), not an arbitrage." That is the lab's general message. Here the lab, the workbook and the independent recomputation agree on every figure to the dollar, so the gap is not a formula error in either tool. The three usual suspects are ruled out: the rate basis is ACT/360 in both, the ratio is not inverted (the implied forward is the same in both), and the loan is sized as `FC_AMT / (1 + R_FC × T/360)` in both. Setting `F0_in` to the implied forward makes the workbook's parity check pass, so the gap comes from the quoted forward, not from the model. I read it as a stale quote, not an arbitrage, and I am reporting it and asking for a requote instead of changing any input.
 
-**Still to compare: the put and the grid.** The lab builds the grid from the strike and premium. Its put column may deduct the premium at face value (floor USD 3,237,000) while the workbook carries it to settlement at `R_USD` (floor USD 3,234,727, spec §4). A difference of about USD 2,273 would be that documented convention, not an error. Once compared, the result goes in the last row of the table above.
+**Put and grid: what differs and why.** The Lab's put column is USD 3,237,000 at or below the strike, which is exactly `FC_AMT × K_PUT − FC_AMT × PREM_PUT` = 3,304,200 (3,000,000 × 1.1014), less the premium at face value of USD 67,200 = 3,237,000. The workbook deducts the premium at its day-273 value, USD 67,200 × (1 + 4.46% × 273/360) = USD 69,472.82, giving 3,234,727.18. Every put row in the grid differs by the same USD 2,272.82, which is the interest on the premium over 273 days, so the two tools use one payoff and differ only in the timing of the premium. The workbook's convention follows spec §4: the premium is paid today and the euros arrive in 273 days, so the two amounts must be put on the same date before they are compared. The Lab treats a dollar paid today as a dollar received on day 273. Neither is a formula error, and I have kept the workbook's convention.
+
+**What the difference changes.** Nothing in the ranking of the best strategy: the forward is best in all eleven rows in both tools. It does move one comparison below the forward. At +3% the Lab's put (USD 3,336,126) is above money market (USD 3,335,518), while the workbook's put (USD 3,333,853) is below it. The put also breaks even with the money-market hedge about USD 2,273 sooner under the Lab's convention. Stage 5 should state which convention it uses.
+
+**The Lab's chart.** It plots the forward and money-market lines as flat, the unhedged line rising at a constant slope, and the put as flat from the left until about S_T = 1.1014 (the strike) and then rising with the same slope as the unhedged line. That is the shape the workbook's `Sensitivity` chart shows.
 
 ## 8. Assumptions and limitations
 
